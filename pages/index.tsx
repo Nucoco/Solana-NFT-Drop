@@ -28,6 +28,16 @@ const Home = () => {
     }
   };
 
+  // ウォレット未接続時のボタン
+  const renderNotConnectedContainer = () => (
+    <button
+      className={`${styles.ctaButton} ${styles.connectWalletButton}`}
+      onClick={async () => {}}
+    >
+      Connect to Wallet
+    </button>
+  );
+
   // コンポーネントの初期マウント時に、Phantom Walletの接続を確認
   useEffect(() => {
     const onLoad = async () => {
@@ -49,6 +59,7 @@ const Home = () => {
           <div>
             <p className={styles.header}>🍭 Candy Drop</p>
             <p className={styles.subText}>NFT drop machine with fair mint</p>
+            {renderNotConnectedContainer()}
           </div>
           <div className={styles.footerContainer}>
             <Image
