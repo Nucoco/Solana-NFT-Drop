@@ -1,5 +1,6 @@
 import Head from 'next/head';
 import Image from 'next/image';
+import { useEffect } from 'react';
 
 import twitterLogo from '@/public/twitter-logo.svg';
 import styles from '@/styles/Home.module.css';
@@ -9,6 +10,31 @@ const TWITTER_HANDLE = '_buildspace';
 const TWITTER_LINK = `https://twitter.com/${TWITTER_HANDLE}`;
 
 const Home = () => {
+  const checkIfWalletIsConnected = async () => {
+    try {
+      const { solana } = window;
+
+      if (solana && solana.isPhantom) {
+        console.log('Phantom wallet found!');
+
+      // ユーザーのウォレットに直接
+      const response = await solana.connect({ onlyIfTrusted: true });
+      console.log(`Connected with Public Key: ${response.publicKey.toString()}`);
+      } else {
+        alert('Solana object not found! Get a Phantom Wallet 👻');
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  // コンポーネントの初期マウント時に、Phantom Walletの接続を確認
+  useEffect(() => {
+    const onLoad = async () => {
+      await checkIfWalletIsConnected();
+    };
+    onLoad();
+  }, []);
 
   return (
     <>
