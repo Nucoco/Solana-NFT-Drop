@@ -1,6 +1,6 @@
 import Head from 'next/head';
 import Image from 'next/image';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import twitterLogo from '@/public/twitter-logo.svg';
 import styles from '@/styles/Home.module.css';
@@ -10,6 +10,7 @@ const TWITTER_HANDLE = '_buildspace';
 const TWITTER_LINK = `https://twitter.com/${TWITTER_HANDLE}`;
 
 const Home = () => {
+  const [walletAddress, setWalletAddress] = useState(null);
   const checkIfWalletIsConnected = async () => {
     try {
       const { solana } = window;
@@ -17,9 +18,12 @@ const Home = () => {
       if (solana && solana.isPhantom) {
         console.log('Phantom wallet found!');
 
-      // ユーザーのウォレットに直接
-      const response = await solana.connect({ onlyIfTrusted: true });
-      console.log(`Connected with Public Key: ${response.publicKey.toString()}`);
+        // ユーザーのウォレットに直接
+        const response = await solana.connect({ onlyIfTrusted: true });
+        console.log(`Connected with Public Key: ${response.publicKey.toString()}`);
+
+        // ユーザーの公開鍵をstateとして保持
+        setWalletAddress(response.publicKey.toString());
       } else {
         alert('Solana object not found! Get a Phantom Wallet 👻');
       }
@@ -28,11 +32,21 @@ const Home = () => {
     }
   };
 
+  const connectWallet = async () => {
+    const { solana } = window;
+
+    if (solana) {
+      const response = await solana.connect();
+      console.log('Connected with Public Key:', response.publicKey.toString());
+      setWalletAddress(response.publicKey.toString());
+    }
+  }
+
   // ウォレット未接続時のボタン
   const renderNotConnectedContainer = () => (
     <button
       className={`${styles.ctaButton} ${styles.connectWalletButton}`}
-      onClick={async () => {}}
+      onClick={connectWallet}
     >
       Connect to Wallet
     </button>
@@ -59,7 +73,7 @@ const Home = () => {
           <div>
             <p className={styles.header}>🍭 Candy Drop</p>
             <p className={styles.subText}>NFT drop machine with fair mint</p>
-            {renderNotConnectedContainer()}
+            {!walletAddress && renderNotConnectedContainer()}
           </div>
           <div className={styles.footerContainer}>
             <Image
