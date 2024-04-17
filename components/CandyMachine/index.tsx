@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import {
   fetchCandyMachine,
   mintV2,
@@ -34,6 +35,11 @@ type CandyMachineProps = {
 const CandyMachine = (props: CandyMachineProps) => {
   const { walletAddress } = props;
 
+  // CandyMachine/index.tsx
+  useEffect(() => {
+    getCandyMachineState();
+  }, []);
+
   return (
     <div className={candyMachineStyles.machineContainer}>
       <p>Drop Date:</p>
@@ -45,6 +51,45 @@ const CandyMachine = (props: CandyMachineProps) => {
       </button>
     </div>
   );
+};
+
+// CandyMachine/index.tsx
+const getCandyMachineState = async () => {
+  try {
+    if (
+      process.env.NEXT_PUBLIC_SOLANA_RPC_HOST &&
+      process.env.NEXT_PUBLIC_CANDY_MACHINE_ID
+    ) {
+      // Candy Machineと対話するためのUmiインスタンスを作成し、必要なプラグインを追加します。
+      const umi = createUmi(process.env.NEXT_PUBLIC_SOLANA_RPC_HOST)
+        .use(walletAdapterIdentity(walletAddress))
+        .use(nftStorageUploader())
+        .use(mplTokenMetadata())
+        .use(mplCandyMachine());
+      // Candy Machineからメタデータを取得します。
+      const candyMachine = await fetchCandyMachine(
+        umi,
+        publicKey(process.env.NEXT_PUBLIC_CANDY_MACHINE_ID),
+      );
+      const candyGuard = await safeFetchCandyGuard(
+        umi,
+        candyMachine.mintAuthority,
+      );
+
+      // 取得したデータをコンソールに出力します。
+      console.log(`items: ${JSON.stringify(candyMachine.items)}`);
+      console.log(`itemsAvailable: ${candyMachine.data.itemsAvailable}`);
+      console.log(`itemsRedeemed: ${candyMachine.itemsRedeemed}`);
+      if (candyGuard?.guards.startDate.__option !== 'None') {
+        console.log(`startDate: ${candyGuard?.guards.startDate.value.date}`);
+
+        const startDateString = new Date(Number(candyGuard?.guards.startDate.value.date) * 1000);
+        console.log(`startDateString: ${startDateString}`);
+      }
+    }
+  } catch (error) {
+    console.error(error);
+  }
 };
 
 export default CandyMachine;
