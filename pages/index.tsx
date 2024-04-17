@@ -5,7 +5,8 @@ import { useEffect, useState } from 'react';
 import twitterLogo from '@/public/twitter-logo.svg';
 import styles from '@/styles/Home.module.css';
 
-// Constants
+import CandyMachine from '@/components/CandyMachine';
+
 const TWITTER_HANDLE = '_buildspace';
 const TWITTER_LINK = `https://twitter.com/${TWITTER_HANDLE}`;
 
@@ -75,6 +76,8 @@ const Home = () => {
             <p className={styles.subText}>NFT drop machine with fair mint</p>
             {!walletAddress && renderNotConnectedContainer()}
           </div>
+          {/* ウォレットアドレスがステートに保存されていたら、CandyMachineコンポーネントに渡す */}
+          {walletAddress && <CandyMachine walletAddress={window.solana} />}
           <div className={styles.footerContainer}>
             <Image
               alt="Twitter Logo"
