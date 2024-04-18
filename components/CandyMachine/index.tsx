@@ -40,6 +40,9 @@ const CandyMachine = (props: CandyMachineProps) => {
   const [candyGuard, setCandyGuard] = useState<CandyGuardType | null>(null);
   const [startDateString, setStartDateString] = useState<Date | undefined>(undefined);
 
+  // mintToken関数が実行中かどうかを管理するステートを追加する。
+  const [isMinting, setIsMinting] = useState(false);
+
   const getCandyMachineState = async () => {
     try {
       if (
@@ -96,6 +99,56 @@ const CandyMachine = (props: CandyMachineProps) => {
     }
   };
 
+  const mintToken = async (
+    candyMachine: CandyMachineType,
+    candyGuard: CandyGuardType,
+  ) => {
+    // 関数実行中なので`true`を設定します。
+    setIsMinting(true);
+    try {
+      if (umi === undefined) {
+        throw new Error('Umi context was not initialized.');
+      }
+      if (candyGuard.guards.solPayment.__option === 'None') {
+        throw new Error('Destination of solPayment is not set.');
+      }
+
+      const nftSigner = generateSigner(umi);
+      const destination = candyGuard.guards.solPayment.value.destination;
+
+      // solanaではtransactionに命令をひとまとめにして実行する
+      const transaction = transactionBuilder()
+        // 計算ユニットのデフォ値は200kだが、NFTのミントなどには足りない。
+        .add(setComputeUnitLimit(umi, { units: 600_000 }))
+        // mint
+        .add(
+          mintV2(umi, {
+            candyGuard: candyGuard.publicKey,
+            candyMachine: candyMachine.publicKey,
+            collectionMint: candyMachine.collectionMint,
+            collectionUpdateAuthority: candyMachine.authority,
+            mintArgs: {
+              solPayment: some({ destination: destination }),
+            },
+            nftMint: nftSigner,
+          }),
+        );
+
+      // トランザクションを送信して、ネットワークによる確認を待ちます。
+      await transaction.sendAndConfirm(umi).then((response) => {
+        const transactionResult = response.result.value;
+        if (transactionResult.err) {
+          console.error(`Failed mint: ${transactionResult.err}`);
+        }
+      })
+    } catch (error) {
+      console.error(error);
+    } finally {
+      // 関数が終了するので`false`を設定します。
+      setIsMinting(false);
+    }
+  };
+
   useEffect(() => {
     getCandyMachineState();
   }, []);
@@ -106,7 +159,11 @@ const CandyMachine = (props: CandyMachineProps) => {
       <p>
         {`Items Minted: ${candyMachine.itemsRedeemed} / ${candyMachine.data.itemsAvailable}`}
       </p>
-      <button className={`${styles.ctaButton} ${styles.mintButton}`}>
+      <button
+        className={`${styles.ctaButton} ${styles.mintButton}`}
+        onClick={() => mintToken(candyMachine, candyGuard)}
+        disabled={isMinting}
+      >
         Mint NFT
       </button>
     </div>
