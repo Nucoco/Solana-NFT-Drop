@@ -178,13 +178,17 @@ const CandyMachine = (props: CandyMachineProps) => {
           {' '}
           {`Items Minted: ${candyMachine.itemsRedeemed} / ${candyMachine.data.itemsAvailable}`}
         </p>
-        <button
-          className={`${styles.ctaButton} ${styles.mintButton}`}
-          onClick={() => mintToken(candyMachine, candyGuard)}
-          disabled={isMinting}
-        >
-          Mint NFT
-        </button>
+        {candyMachine.itemsRedeemed === candyMachine.data.itemsAvailable ? (
+          <p className={styles.subText}>Sold Out 🙊</p>
+        ) : (
+          <button
+            className={`${styles.ctaButton} ${styles.mintButton}`}
+            onClick={() => mintToken(candyMachine, candyGuard)}
+            disabled={isMinting}
+          >
+            Mint NFT
+          </button>
+        )}
       </>
     );
   };
