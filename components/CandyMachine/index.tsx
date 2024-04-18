@@ -23,6 +23,8 @@ import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
 import { walletAdapterIdentity } from '@metaplex-foundation/umi-signer-wallet-adapters';
 import { nftStorageUploader } from '@metaplex-foundation/umi-uploader-nft-storage';
 
+import CountdownTimer from '@/components/CountdownTimer';
+
 import candyMachineStyles from './CandyMachine.module.css';
 
 import styles from '@/styles/Home.module.css';
@@ -149,23 +151,51 @@ const CandyMachine = (props: CandyMachineProps) => {
     }
   };
 
+  // レンダリング関数を作成します。
+  const renderDropField = (
+    candyMachine: CandyMachineType,
+    candyGuard: CandyGuardType,
+  ) => {
+    const startDate: Option<StartDateType> = candyGuard.guards.startDate;
+    if (startDate.__option === 'None') {
+      return;
+    }
+
+    // JavaScriptのDateオブジェクトで現在の日付とDropDateを取得します。
+    const currentDate = new Date();
+    const dropDate = new Date(Number(startDate.value.date) * 1000);
+
+    // 現在の日付がドロップ日よりも前の場合、CountdownTimerコンポーネントをレンダリングします。
+    if (currentDate < dropDate) {
+      return <CountdownTimer dropDate={dropDate} />;
+    }
+
+    // 現在の日付がドロップ日よりも後の場合、ドロップ日をレンダリングします。
+    return (
+      <>
+        <p>{`Drop Date: ${dropDate}`}</p>
+        <p>
+          {' '}
+          {`Items Minted: ${candyMachine.itemsRedeemed} / ${candyMachine.data.itemsAvailable}`}
+        </p>
+        <button
+          className={`${styles.ctaButton} ${styles.mintButton}`}
+          onClick={() => mintToken(candyMachine, candyGuard)}
+          disabled={isMinting}
+        >
+          Mint NFT
+        </button>
+      </>
+    );
+  };
+
   useEffect(() => {
     getCandyMachineState();
   }, []);
 
   return candyMachine && candyGuard ? (
     <div className={candyMachineStyles.machineContainer}>
-      <p>{`Drop Date: ${startDateString}`}</p>
-      <p>
-        {`Items Minted: ${candyMachine.itemsRedeemed} / ${candyMachine.data.itemsAvailable}`}
-      </p>
-      <button
-        className={`${styles.ctaButton} ${styles.mintButton}`}
-        onClick={() => mintToken(candyMachine, candyGuard)}
-        disabled={isMinting}
-      >
-        Mint NFT
-      </button>
+      {renderDropField(candyMachine, candyGuard)}
     </div>
   ) : null;
 };
