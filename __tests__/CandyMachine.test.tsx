@@ -6,6 +6,7 @@ import { act, render, screen } from '@testing-library/react';
 
 import CandyMachine from '@/components/CandyMachine';
 
+// solanaと通信するモジュールをモック
 jest.mock('@metaplex-foundation/mpl-candy-machine', () => ({
   fetchCandyMachine: jest.fn(),
   safeFetchCandyGuard: jest.fn(),
@@ -40,6 +41,7 @@ jest.mock('@metaplex-foundation/umi-uploader-nft-storage', () => ({
   nftStorageUploader: jest.fn(),
 }));
 
+// 各種ブロックチェーン通信用関数の戻り値をモック
 const mockCandyMachineData = {
   items: [],
   itemsRedeemed: 0,
@@ -82,26 +84,32 @@ const mockCandyGuardFutureData = {
 };
 
 describe('CandyMachine', () => {
+  // ドロップ日が未来に設定されている場合
   describe('when drop date is in the future', () => {
-    /** fetchCandyMachine関数の戻り値を設定します */
+    // fetchCandyMachine関数をモック
     (fetchCandyMachine as jest.Mock).mockImplementationOnce(() =>
+      // 戻り値をモック
       Promise.resolve({
         ...mockCandyMachineData,
       }),
     );
-    /** safeFetchCandyGuard関数の戻り値を設定して、ドロップ日を現在時刻の1日後に設定します */
+    // safeFetchCandyGuard関数をモック
     (safeFetchCandyGuard as jest.Mock).mockImplementationOnce(() =>
+      // 戻り値をモック（1日後）
       Promise.resolve({
         ...mockCandyGuardFutureData,
       }),
     );
     it('renders CountdownTimer', async () => {
+      // テストのためにレンダリングして
       await act(async () => {
         render(<CandyMachine walletAddress={'mockAddress'} />);
       });
 
+      // カウントダウンが表示されているか
       const textElement = screen.getByText(/Candy Drop Starting In/);
       expect(textElement).toBeInTheDocument();
+      // ミントボタンが表示されていないか
       const buttonElement = screen.queryByRole('button', {
         name: /Mint NFT/i,
       });
@@ -109,16 +117,16 @@ describe('CandyMachine', () => {
     });
   });
 
+  // ドロップが過去日の時
   describe('when the drop date is set in the past', () => {
-    /** safeFetchCandyGuard関数の戻り値を設定して、ドロップ日を現在時刻の1日前に設定します */
     (safeFetchCandyGuard as jest.Mock).mockImplementation(() =>
       Promise.resolve({
         ...mockCandyGuardPastData,
       }),
     );
 
+    // ミントボタンの表示を確認
     it('should render a mint button', async () => {
-      /** fetchCandyMachine関数の戻り値を設定します */
       (fetchCandyMachine as jest.Mock).mockImplementationOnce(() =>
         Promise.resolve({
           ...mockCandyMachineData,
@@ -135,8 +143,8 @@ describe('CandyMachine', () => {
       expect(buttonElement).toBeInTheDocument();
     });
 
+    // 売り切れ確認
     it('should render "Sold Out"', async () => {
-      /** fetchCandyMachine関数の戻り値を設定して、NFTが全てミントされた状態を作ります */
       (fetchCandyMachine as jest.Mock).mockImplementationOnce(() =>
         Promise.resolve({
           ...mockCandyMachineData,
